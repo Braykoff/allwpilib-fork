@@ -84,4 +84,21 @@ public final class AutodiffJNI extends WPIMathJNI {
    * @return The expression type of the variable.
    */
   public static native int getVariableType(long impl);
+
+  /**
+   * Frees the native variable associated with the given handle.
+   *
+   * @param impl The implementation handle of the variable.
+   */
+  public static native void freeVariable(long impl);
+
+  /**
+   * Creates a variable matrix with the given number of rows and columns and returns its
+   * implementation handle.
+   *
+   * @param rows The number of matrix rows.
+   * @param cols The number of matrix columns.
+   * @return The variable matrix's implementation handle.
+   */
+  public static native long createVariableMatrix(int rows, int cols);
 }

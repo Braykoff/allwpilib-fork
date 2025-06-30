@@ -5,20 +5,29 @@
 package edu.wpi.first.math.autodiff;
 
 import edu.wpi.first.math.jni.AutodiffJNI;
+import edu.wpi.first.util.WPICleaner;
+import java.lang.ref.Cleaner.Cleanable;
+import java.lang.ref.WeakReference;
+import java.util.concurrent.ConcurrentHashMap;
 
 /** An autodiff variable pointing to an expression node. */
-public class Variable {
-  // TODO closable
+public class Variable implements AutoCloseable {
+  private static final ConcurrentHashMap<Long, WeakReference<Variable>> cache =
+      new ConcurrentHashMap<>();
+
   // TODO equality, inequalities
   private long m_impl;
+  private final Cleanable m_cleanable;
 
   /**
    * Constructs a variable object with the given handle.
    *
    * @param handle The implementation handle of the variable.
    */
-  protected Variable(long impl) {
+  @SuppressWarnings("this-escape")
+  private Variable(long impl) {
     m_impl = impl;
+    m_cleanable = WPICleaner.register(this, this::cleanup);
   }
 
   /**
@@ -29,6 +38,25 @@ public class Variable {
    */
   public static Variable fromConstant(double value) {
     return new Variable(AutodiffJNI.createConstantVariable(value));
+  }
+
+  /**
+   * Creates a new variable from a native implementation handle, caching it to ensure that two
+   * variable objects don't have the same implementation handle.
+   *
+   * @param impl Implementation handle of the variable.
+   * @return The variable.
+   */
+  protected static Variable fromHandle(long impl) {
+    WeakReference<Variable> ref = cache.get(impl);
+    Variable v = (ref != null) ? ref.get() : null;
+
+    if (v == null) {
+      v = new Variable(impl);
+      cache.put(impl, new WeakReference<>(v));
+    }
+
+    return v;
   }
 
   /**
@@ -142,7 +170,7 @@ public class Variable {
 
   /**
    * Gets the value of this variable.
-   * 
+   *
    * @return The value of this variable.
    */
   public double getValue() {
@@ -151,6 +179,7 @@ public class Variable {
 
   /**
    * Gets the type of this expression (constant, linear, quadratic, or nonlinear).
+   *
    * @return The type of this expression.
    */
   public ExpressionType getType() {
@@ -164,5 +193,16 @@ public class Variable {
    */
   public long getHandle() {
     return m_impl;
+  }
+
+  @Override
+  public void close() {
+    m_cleanable.clean();
+  }
+
+  private void cleanup() {
+    AutodiffJNI.freeVariable(m_impl);
+    cache.remove(m_impl);
+    m_impl = 0;
   }
 }
