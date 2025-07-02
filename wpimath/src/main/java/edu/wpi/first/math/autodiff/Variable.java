@@ -7,14 +7,9 @@ package edu.wpi.first.math.autodiff;
 import edu.wpi.first.math.jni.AutodiffJNI;
 import edu.wpi.first.util.WPICleaner;
 import java.lang.ref.Cleaner.Cleanable;
-import java.lang.ref.WeakReference;
-import java.util.concurrent.ConcurrentHashMap;
 
 /** An autodiff variable pointing to an expression node. */
 public class Variable implements AutoCloseable {
-  private static final ConcurrentHashMap<Long, WeakReference<Variable>> cache =
-      new ConcurrentHashMap<>();
-
   // TODO equality, inequalities
   private long m_impl;
   private final Cleanable m_cleanable;
@@ -25,7 +20,7 @@ public class Variable implements AutoCloseable {
    * @param handle The implementation handle of the variable.
    */
   @SuppressWarnings("this-escape")
-  private Variable(long impl) {
+  protected Variable(long impl) {
     m_impl = impl;
     m_cleanable = WPICleaner.register(this, this::cleanup);
   }
@@ -38,25 +33,6 @@ public class Variable implements AutoCloseable {
    */
   public static Variable fromConstant(double value) {
     return new Variable(AutodiffJNI.createConstantVariable(value));
-  }
-
-  /**
-   * Creates a new variable from a native implementation handle, caching it to ensure that two
-   * variable objects don't have the same implementation handle.
-   *
-   * @param impl Implementation handle of the variable.
-   * @return The variable.
-   */
-  protected static Variable fromHandle(long impl) {
-    WeakReference<Variable> ref = cache.get(impl);
-    Variable v = (ref != null) ? ref.get() : null;
-
-    if (v == null) {
-      v = new Variable(impl);
-      cache.put(impl, new WeakReference<>(v));
-    }
-
-    return v;
   }
 
   /**
@@ -178,6 +154,15 @@ public class Variable implements AutoCloseable {
   }
 
   /**
+   * Sets the variable's internal value.
+   *
+   * @param value The variable's internal value.
+   */
+  public void setValue(double value) {
+    AutodiffJNI.setVariableValue(m_impl, value);
+  }
+
+  /**
    * Gets the type of this expression (constant, linear, quadratic, or nonlinear).
    *
    * @return The type of this expression.
@@ -202,7 +187,6 @@ public class Variable implements AutoCloseable {
 
   private void cleanup() {
     AutodiffJNI.freeVariable(m_impl);
-    cache.remove(m_impl);
     m_impl = 0;
   }
 }

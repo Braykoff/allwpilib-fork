@@ -18,11 +18,11 @@ public class VariableMatrix {
    * @return A variable matrix filled with zeroes.
    */
   public static VariableMatrix zero(int rows, int cols) {
-    return null;
+    return new VariableMatrix(rows, cols);
   }
 
   public static VariableMatrix ones(int rows, int cols) {
-    return null;
+    return new VariableMatrix(AutodiffJNI.createVariableMatrix(rows, cols, 1));
   }
 
   /**
@@ -41,7 +41,7 @@ public class VariableMatrix {
    * @param cols The number of matrix columns.
    */
   public VariableMatrix(int rows, int cols) {
-    this(AutodiffJNI.createVariableMatrix(rows, cols));
+    this(AutodiffJNI.createVariableMatrix(rows, cols, 0));
   }
 
   /**
@@ -51,5 +51,9 @@ public class VariableMatrix {
    */
   public VariableMatrix(int rows) {
     this(rows, 1);
+  }
+
+  public VariableMatrix times(VariableMatrix other) {
+    
   }
 }

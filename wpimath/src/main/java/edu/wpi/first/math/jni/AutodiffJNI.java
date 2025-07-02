@@ -70,7 +70,7 @@ public final class AutodiffJNI extends WPIMathJNI {
   public static native long powerVariables(long base, long exp);
 
   /**
-   * Gets the value of a variable
+   * Gets the value of a variable.
    *
    * @param impl The implementation handle of the variable.
    * @return The value of the variable.
@@ -78,7 +78,15 @@ public final class AutodiffJNI extends WPIMathJNI {
   public static native double getVariableValue(long impl);
 
   /**
-   * Gets the expression type of a variable
+   * Sets the value of a variable.
+   *
+   * @param impl The implementation handle of the variable.
+   * @param val The value of the variable.
+   */
+  public static native void setVariableValue(long impl, double val);
+
+  /**
+   * Gets the expression type of a variable.
    *
    * @param impl The implementation handle of the variable.
    * @return The expression type of the variable.
@@ -98,7 +106,12 @@ public final class AutodiffJNI extends WPIMathJNI {
    *
    * @param rows The number of matrix rows.
    * @param cols The number of matrix columns.
+   * @param defaultValue The default fill value of the matrix (either 1 or 0).
    * @return The variable matrix's implementation handle.
    */
-  public static native long createVariableMatrix(int rows, int cols);
+  public static native long createVariableMatrix(int rows, int cols, int defaultValue);
+
+  public static native long multiplyVariableMatrices(long x, long y);
+  public static native long multiplyVariableMatrixByVariableBlock(long x, long y);
+  public static native long multiplyVariableMatrixByVariable(long x, long y);
 }
